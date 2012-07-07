@@ -68,42 +68,38 @@ class Client
     )
 
   get: (method, params, handler) ->
-    request_info = {
-      'method': 'GET',
-      'uri': @url() + method,
-      'headers': @headers,
-      'qs': params
-    }
+    request_info =
+      method: 'GET'
+      uri: @url() + method
+      headers: @headers
+      qs: params
 
     @request(request_info, handler)
 
   post: (method, params, handler) ->
-    request_info = {
-      'method': 'POST',
-      'uri': @url() + method,
-      'headers': @headers,
-      'json': params
-    }
+    request_info =
+      method: 'POST'
+      uri: @url() + method
+      headers: @headers
+      json: params
 
     @request(request_info, handler)
 
   put: (method, params, handler) ->
-    request_info = {
-      'method': 'PUT',
-      'uri': @url() + method,
-      'headers': @headers,
-      'json': params
-    }
+    request_info =
+      method: 'PUT'
+      uri: @url() + method
+      headers: @headers
+      json: params
 
     @request(request_info, handler)
 
   delete: (method, params, handler) ->
-    request_info = {
-      'method': 'DELETE',
-      'uri': @url() + method,
-      'headers': @headers,
-      'qs': params
-    }
+    request_info =
+      method: 'DELETE'
+      uri: @url() + method
+      headers: @headers
+      qs: params
 
     @request(request_info, handler)
 
