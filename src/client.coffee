@@ -17,7 +17,9 @@ class Client
     @options = {}
 
     @load_from_hash('params', options)
-    @load_from_config(company, product, options.config_file)
+    @load_from_config(company, product, options.config)
+    @load_from_config(company, product, process.env[company.toUpperCase() + '_' + product.toUpperCase() + '_CONFIG'])
+    @load_from_config(company, product, process.env[company.toUPperCase() + '_CONFIG'])
     @load_from_env(company.toUpperCase() + '_' + product.toUpperCase())
     @load_from_env(company.toUpperCase())
     @load_from_config(company, product, "./.#{company}.json")
