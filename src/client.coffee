@@ -77,7 +77,7 @@ class Client
     request_info =
       method: 'GET'
       uri: @url() + method
-      headers: @headers
+      headers: @headers()
       qs: params
 
     @request(request_info, cb)
@@ -86,7 +86,7 @@ class Client
     request_info =
       method: 'POST'
       uri: @url() + method
-      headers: @headers
+      headers: @headers()
       json: params
 
     @request(request_info, cb)
@@ -95,7 +95,7 @@ class Client
     request_info =
       method: 'PUT'
       uri: @url() + method
-      headers: @headers
+      headers: @headers()
       json: params
 
     @request(request_info, cb)
@@ -104,14 +104,13 @@ class Client
     request_info =
       method: 'DELETE'
       uri: @url() + method
-      headers: @headers
+      headers: @headers()
       qs: params
 
     @request(request_info, cb)
 
-  parse_response: (error, response, body, parse_json, cb) ->
+  parse_response: (error, response, body, cb) ->
     if response.statusCode == 200
-      body = JSON.parse(body) if parse_json
       cb(null, body)
     else
       cb(new Error(body), null)
