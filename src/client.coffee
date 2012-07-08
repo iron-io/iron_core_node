@@ -5,10 +5,13 @@ _ = require('underscore')
 fs = require('fs')
 request = require('request')
 
-max_retries = 5
+MAX_RETRIES = 5
 
 class Client
   constructor: (company, product, options = {}, default_options = {}, extra_options_list = []) ->
+    core_default_options =
+      user_agent: @version()
+
     @options_list = ['scheme', 'host', 'port', 'user_agent'].concat(extra_options_list)
 
     @options = {}
@@ -21,7 +24,10 @@ class Client
     @load_from_config(company, product, "./#{company}.json")
     @load_from_config(company, product, "~/.#{company}.json")
     @load_from_hash('defaults', default_options)
-    @load_from_hash('defaults', {'user_agent': "iron_core_node-#{version}"})
+    @load_from_hash('defaults', core_default_options)
+
+  version: ->
+    "iron_core_node-#{version}"
 
   set_option: (source, name, value) ->
     if (not @options[name]?) and value?
@@ -53,54 +59,61 @@ class Client
   url: ->
     "#{@options.scheme}://#{@options.host}:#{@options.port}/"
 
-  request: (request_info, handler, retry = 0) ->
+  request: (request_info, cb, retry = 0) ->
     request_bind = _.bind(@request, @)
 
     request(request_info, (error, response, body) ->
       if response.statusCode == 200
-        handler(error, response, body)
+        cb(error, response, body)
       else
-        if response.statusCode == 503 and retry < max_retries
+        if response.statusCode == 503 and retry < MAX_RETRIES
           delay = Math.pow(4, retry) * 100 * Math.random()
-          _.delay(request_bind, delay, request_info, handler, retry + 1)
+          _.delay(request_bind, delay, request_info, cb, retry + 1)
         else
-          handler(error, response, body)
+          cb(error, response, body)
     )
 
-  get: (method, params, handler) ->
+  get: (method, params, cb) ->
     request_info =
       method: 'GET'
       uri: @url() + method
       headers: @headers
       qs: params
 
-    @request(request_info, handler)
+    @request(request_info, cb)
 
-  post: (method, params, handler) ->
+  post: (method, params, cb) ->
     request_info =
       method: 'POST'
       uri: @url() + method
       headers: @headers
       json: params
 
-    @request(request_info, handler)
+    @request(request_info, cb)
 
-  put: (method, params, handler) ->
+  put: (method, params, cb) ->
     request_info =
       method: 'PUT'
       uri: @url() + method
       headers: @headers
       json: params
 
-    @request(request_info, handler)
+    @request(request_info, cb)
 
-  delete: (method, params, handler) ->
+  delete: (method, params, cb) ->
     request_info =
       method: 'DELETE'
       uri: @url() + method
       headers: @headers
       qs: params
 
-    @request(request_info, handler)
+    @request(request_info, cb)
+
+  parse_response: (error, response, body, parse_json, cb) ->
+    if response.statusCode == 200
+      body = JSON.parse(body) if parse_json
+      cb(null, body)
+    else
+      cb(new Error(body), null)
 
 module.exports.Client = Client
