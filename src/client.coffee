@@ -5,9 +5,9 @@ _ = require('underscore')
 fs = require('fs')
 request = require('request')
 
-MAX_RETRIES = 5
-
 class Client
+  MAX_RETRIES = 5
+
   constructor: (company, product, options = {}, default_options = {}, extra_options_list = []) ->
     core_default_options =
       user_agent: @version()
@@ -66,7 +66,7 @@ class Client
       if response.statusCode == 200
         cb(error, response, body)
       else
-        if response.statusCode == 503 and retry < MAX_RETRIES
+        if response.statusCode == 503 and retry < @MAX_RETRIES
           delay = Math.pow(4, retry) * 100 * Math.random()
           _.delay(request_bind, delay, request_info, cb, retry + 1)
         else
