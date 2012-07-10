@@ -8,52 +8,50 @@ request = require('request')
 class Client
   MAX_RETRIES = 5
 
-  constructor: (company, product, options = {}, default_options = {}, extra_options_list = []) ->
-    core_default_options =
+  constructor: (company, product, options = {}, defaultOptions = {}, extraOptionsList = []) ->
+    coreDefaultOptions =
       user_agent: @version()
 
-    @options_list = ['scheme', 'host', 'port', 'user_agent'].concat(extra_options_list)
+    @optionsList = ['scheme', 'host', 'port', 'user_agent'].concat(extraOptionsList)
 
     @options = {}
 
-    @load_from_hash('params', options)
-    @load_from_config(company, product, options.config)
-    @load_from_config(company, product, process.env[company.toUpperCase() + '_' + product.toUpperCase() + '_CONFIG'])
-    @load_from_config(company, product, process.env[company.toUPperCase() + '_CONFIG'])
-    @load_from_env(company.toUpperCase() + '_' + product.toUpperCase())
-    @load_from_env(company.toUpperCase())
-    @load_from_config(company, product, "./.#{company}.json")
-    @load_from_config(company, product, "./#{company}.json")
-    @load_from_config(company, product, "~/.#{company}.json")
-    @load_from_hash('defaults', default_options)
-    @load_from_hash('defaults', core_default_options)
+    @loadFromHash('params', options)
+    @loadFromConfig(company, product, options.config)
+    @loadFromConfig(company, product, process.env[company.toUpperCase() + '_' + product.toUpperCase() + '_CONFIG'])
+    @loadFromConfig(company, product, process.env[company.toUpperCase() + '_CONFIG'])
+    @loadFromEnv(company.toUpperCase() + '_' + product.toUpperCase())
+    @loadFromEnv(company.toUpperCase())
+    @loadFromConfig(company, product, "./.#{company}.json")
+    @loadFromConfig(company, product, "./#{company}.json")
+    @loadFromConfig(company, product, "~/.#{company}.json")
+    @loadFromHash('defaults', defaultOptions)
+    @loadFromHash('defaults', coreDefaultOptions)
 
   version: ->
     "iron_core_node-#{version}"
 
-  set_option: (source, name, value) ->
+  setOption: (source, name, value) ->
     if (not @options[name]?) and value?
-      console.log("Setting #{name} to '#{value}' from #{source}")
-      
       @options[name] = value
 
-  load_from_hash: (source, hash) ->
+  loadFromHash: (source, hash) ->
     if hash?
-      @set_option(source, option, hash[option]) for option in @options_list
+      @setOption(source, option, hash[option]) for option in @optionsList
 
-  load_from_env: (prefix) ->
-    @set_option('environment_variable', option, process.env[prefix + '_' + option.toUpperCase()]) for option in @options_list
+  loadFromEnv: (prefix) ->
+    @setOption('environment variable', option, process.env[prefix + '_' + option.toUpperCase()]) for option in @optionsList
 
-  load_from_config: (company, product, config_file) ->
-    if config_file?
+  loadFromConfig: (company, product, configFile) ->
+    if configFile?
       try
-        real_config_file = config_file.replace(/^~/, process.env.HOME)
+        realConfigFile = configFile.replace(/^~/, process.env.HOME)
 
-        config = JSON.parse(fs.readFileSync(real_config_file))
+        config = JSON.parse(fs.readFileSync(realConfigFile))
 
-        @load_from_hash(config_file, config["#{company}_#{product}"])
-        @load_from_hash(config_file, config[company])
-        @load_from_hash(config_file, config)
+        @loadFromHash(configFile, config["#{company}_#{product}"])
+        @loadFromHash(configFile, config[company])
+        @loadFromHash(configFile, config)
 
   headers: ->
     {'User-Agent': @options.user_agent}
@@ -61,57 +59,57 @@ class Client
   url: ->
     "#{@options.scheme}://#{@options.host}:#{@options.port}/"
 
-  request: (request_info, cb, retry = 0) ->
-    request_bind = _.bind(@request, @)
+  request: (requestInfo, cb, retry = 0) ->
+    requestBind = _.bind(@request, @)
 
-    request(request_info, (error, response, body) ->
+    request(requestInfo, (error, response, body) ->
       if response.statusCode == 200
         cb(error, response, body)
       else
         if response.statusCode == 503 and retry < @MAX_RETRIES
           delay = Math.pow(4, retry) * 100 * Math.random()
-          _.delay(request_bind, delay, request_info, cb, retry + 1)
+          _.delay(requestBind, delay, requestInfo, cb, retry + 1)
         else
           cb(error, response, body)
     )
 
   get: (method, params, cb) ->
-    request_info =
+    requestInfo =
       method: 'GET'
       uri: @url() + method
       headers: @headers()
       qs: params
 
-    @request(request_info, cb)
+    @request(requestInfo, cb)
 
   post: (method, params, cb) ->
-    request_info =
+    requestInfo =
       method: 'POST'
       uri: @url() + method
       headers: @headers()
       json: params
 
-    @request(request_info, cb)
+    @request(requestInfo, cb)
 
   put: (method, params, cb) ->
-    request_info =
+    requestInfo =
       method: 'PUT'
       uri: @url() + method
       headers: @headers()
       json: params
 
-    @request(request_info, cb)
+    @request(requestInfo, cb)
 
   delete: (method, params, cb) ->
-    request_info =
+    requestInfo =
       method: 'DELETE'
       uri: @url() + method
       headers: @headers()
       qs: params
 
-    @request(request_info, cb)
+    @request(requestInfo, cb)
 
-  parse_response: (error, response, body, cb) ->
+  parseResponse: (error, response, body, cb) ->
     if response.statusCode == 200
       cb(null, body)
     else
