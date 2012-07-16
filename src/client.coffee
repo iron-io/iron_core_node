@@ -109,8 +109,10 @@ class Client
 
     @request(requestInfo, cb)
 
-  parseResponse: (error, response, body, cb) ->
+  parseResponse: (error, response, body, cb, parseJson = true) ->
     if response.statusCode == 200
+      body = JSON.parse(body) if parseJson and typeof(body) == 'string'
+
       cb(null, body)
     else
       cb(new Error(body), null)
