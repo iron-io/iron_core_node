@@ -12,19 +12,39 @@ class Client
     coreDefaultOptions =
       user_agent: @version()
 
+    @env = options.env
+    @env ||= process.env[company.toUpperCase() + '_' + product.toUpperCase() + '_ENV'] || process.env[product.toUpperCase() + '_ENV']
+
     @optionsList = ['scheme', 'host', 'port', 'user_agent'].concat(extraOptionsList)
 
     @options = {}
 
     @loadFromHash('params', options)
+
     @loadFromConfig(company, product, options.config)
+
     @loadFromConfig(company, product, process.env[company.toUpperCase() + '_' + product.toUpperCase() + '_CONFIG'])
     @loadFromConfig(company, product, process.env[company.toUpperCase() + '_CONFIG'])
+
     @loadFromEnv(company.toUpperCase() + '_' + product.toUpperCase())
     @loadFromEnv(company.toUpperCase())
-    @loadFromConfig(company, product, "./.#{company}.json")
-    @loadFromConfig(company, product, "./#{company}.json")
-    @loadFromConfig(company, product, "~/.#{company}.json")
+
+    suffixes = []
+
+    if @env?
+      suffixes.push("-#{@env}")
+      suffixes.push("_#{@env}")
+
+    suffixes.push('')
+
+    for suffix in suffixes
+      for ext in ['.json']
+        for config_base in ["#{company}-#{product}", "#{company}_#{product}", company]
+          @loadFromConfig(company, product, "#{config_base}#{suffix}#{ext}")
+          @loadFromConfig(company, product, ".#{config_base}#{suffix}#{ext}")
+          @loadFromConfig(company, product, "~/#{config_base}#{suffix}#{ext}")
+          @loadFromConfig(company, product, "~/.#{config_base}#{suffix}#{ext}")
+
     @loadFromHash('defaults', defaultOptions)
     @loadFromHash('defaults', coreDefaultOptions)
 
@@ -42,16 +62,45 @@ class Client
   loadFromEnv: (prefix) ->
     @setOption('environment variable', option, process.env[prefix + '_' + option.toUpperCase()]) for option in @optionsList
 
+  getSubHash: (hash, subs) ->
+    return null unless hash?
+
+    for sub in subs
+      return null unless hash[sub]?
+
+      hash = hash[sub]
+
+    hash
+
   loadFromConfig: (company, product, configFile) ->
     if configFile?
+      realConfigFile = configFile.replace(/^~/, process.env.HOME)
+
+      configData = '{}'
+
       try
-        realConfigFile = configFile.replace(/^~/, process.env.HOME)
+        configData = fs.readFileSync(realConfigFile)
 
-        config = JSON.parse(fs.readFileSync(realConfigFile))
+      config = JSON.parse(configData)
 
-        @loadFromHash(configFile, config["#{company}_#{product}"])
-        @loadFromHash(configFile, config[company])
-        @loadFromHash(configFile, config)
+      if @env?
+        @loadFromHash(configFile, @getSubHash(config, [@env, "#{company}_#{product}"]))
+        @loadFromHash(configFile, @getSubHash(config, [@env, company, product]))
+        @loadFromHash(configFile, @getSubHash(config, [@env, product]))
+        @loadFromHash(configFile, @getSubHash(config, [@env, company]))
+
+        @loadFromHash(configFile, @getSubHash(config, ["#{company}_#{product}", @env]))
+        @loadFromHash(configFile, @getSubHash(config, [company, product, @env]))
+        @loadFromHash(configFile, @getSubHash(config, [product, @env]))
+        @loadFromHash(configFile, @getSubHash(config, [company, @env]))
+
+        @loadFromHash(configFile, @getSubHash(config, [@env]))
+
+      @loadFromHash(configFile, @getSubHash(config, ["#{company}_#{product}"]))
+      @loadFromHash(configFile, @getSubHash(config, [company, product]))
+      @loadFromHash(configFile, @getSubHash(config, [product]))
+      @loadFromHash(configFile, @getSubHash(config, [company]))
+      @loadFromHash(configFile, @getSubHash(config, []))
 
   headers: ->
     {'User-Agent': @options.user_agent}
