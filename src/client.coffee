@@ -112,7 +112,9 @@ class Client
     requestBind = _.bind(@request, @)
 
     request(requestInfo, (error, response, body) ->
-      if response.statusCode == 200
+      if error && not response
+         cb(error, response, body)
+      else if response.statusCode == 200
         cb(error, response, body)
       else
         if response.statusCode == 503 and retry < @MAX_RETRIES
@@ -159,7 +161,9 @@ class Client
     @request(requestInfo, cb)
 
   parseResponse: (error, response, body, cb, parseJson = true) ->
-    if response.statusCode == 200
+    if error
+      cb(error, null)
+    else if response.statusCode == 200
       body = JSON.parse(body) if parseJson and typeof(body) == 'string'
 
       cb(null, body)
