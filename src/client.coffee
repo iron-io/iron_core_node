@@ -167,9 +167,12 @@ class Client
       body = JSON.parse(body) if parseJson and typeof(body) == 'string'
 
       cb(null, body)
-    else if body and body.msg
-      cb(new Error(body.msg), null)
     else
-      cb(new Error('Unknown error'), null)
+      if body instanceof String or typeof(body) == 'string'
+        cb(new Error(body), null)
+      else if body and body.msg
+        cb(new Error(body.msg), null)
+      else
+        cb(new Error('Unknown error'), null)
 
 module.exports.Client = Client
