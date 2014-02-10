@@ -168,6 +168,11 @@ class Client
 
       cb(null, body)
     else
-      cb(new Error(body), null)
+      if body instanceof String or typeof(body) == 'string'
+        cb(new Error(body), null)
+      else if body and body.msg
+        cb(new Error(body.msg), null)
+      else
+        cb(new Error('Unknown error'), null)
 
 module.exports.Client = Client
