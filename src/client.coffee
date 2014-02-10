@@ -156,7 +156,7 @@ class Client
       method: 'DELETE'
       uri: @url() + method
       headers: @headers()
-      qs: params
+      json: params
 
     @request(requestInfo, cb)
 
