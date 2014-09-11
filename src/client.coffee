@@ -4,6 +4,7 @@ version = @version
 _ = require('underscore')
 fs = require('fs')
 request = require('request')
+needle = require('needle');
 
 class Client
   MAX_RETRIES = 5
@@ -47,6 +48,10 @@ class Client
 
     @loadFromHash('defaults', defaultOptions)
     @loadFromHash('defaults', coreDefaultOptions)
+    keys = ["server", "tenant", "username", "password"]
+    keystone = @options["keystone"]
+    if keystone and _.intersection(keys, _.keys(keystone).length is 4)
+      @useKeystone = true
 
   version: ->
     "iron_core_node-#{version}"
@@ -60,7 +65,8 @@ class Client
       @setOption(source, option, hash[option]) for option in @optionsList
 
   loadFromEnv: (prefix) ->
-    @setOption('environment variable', option, process.env[prefix + '_' + option.toUpperCase()]) for option in @optionsList
+    @setOption('environment variable', option,
+      process.env[prefix + '_' + option.toUpperCase()]) for option in @optionsList
 
   getSubHash: (hash, subs) ->
     return null unless hash?
@@ -113,7 +119,7 @@ class Client
 
     request(requestInfo, (error, response, body) ->
       if error && not response
-         cb(error, response, body)
+        cb(error, response, body)
       else if response.statusCode == 200
         cb(error, response, body)
       else
@@ -124,41 +130,34 @@ class Client
           cb(error, response, body)
     )
 
-  get: (method, params, cb) ->
-    requestInfo =
-      method: 'GET'
-      uri: @url() + method
-      headers: @headers()
-      qs: params
+  requestWrapper: (url, method, params, cb) ->
+    self = this
+    @getToken (token) ->
+      headers = _.extend(self.headers(),
+        Authorization: "OAuth " + token
+      )
+      requestInfo =
+        method: method
+        uri: self.url() + url
+        headers: headers
+        json: params
 
-    @request(requestInfo, cb)
+      self.request(requestInfo, cb)
+
+  get: (method, params, cb) ->
+    @requestWrapper(method, "GET", params, cb)
 
   post: (method, params, cb) ->
-    requestInfo =
-      method: 'POST'
-      uri: @url() + method
-      headers: @headers()
-      json: params
-
-    @request(requestInfo, cb)
+    @requestWrapper(method, "POST", params, cb)
 
   put: (method, params, cb) ->
-    requestInfo =
-      method: 'PUT'
-      uri: @url() + method
-      headers: @headers()
-      json: params
-
-    @request(requestInfo, cb)
+    @requestWrapper(method, "PUT", params, cb)
 
   delete: (method, params, cb) ->
-    requestInfo =
-      method: 'DELETE'
-      uri: @url() + method
-      headers: @headers()
-      json: params
+    @requestWrapper(method, "DELETE", params, cb)
 
-    @request(requestInfo, cb)
+  patch: (method, params, cb) ->
+    @requestWrapper(method, "PATCH", params, cb)
 
   parseResponse: (error, response, body, cb, parseJson = true) ->
     if error
@@ -174,5 +173,32 @@ class Client
         cb(new Error(body.msg), null)
       else
         cb(new Error('Unknown error'), null)
+
+
+  Date::add = (mseconds) ->
+    @setTime @getTime() + (mseconds)
+    this
+
+  getToken: (cb) ->
+    return cb(@options.token)  unless @useKeystone
+    currentDate = new Date()
+    if not @token? or currentDate > @expires
+      uri = @options["keystone"]["server"] + "tokens"
+      body =
+        tenantName: @options["keystone"]["tenant"]
+        passwordCredentials:
+          username: @options["keystone"]["username"]
+          password: @options["keystone"]["password"]
+
+      self = this
+      return needle.post(uri, {auth: body}, {json: true}, (err, resp) ->
+          if not err and resp.statusCode is 200
+            token = resp.body["access"]["token"]
+            timespan = Math.abs(new Date(token["expires"]) - new Date(token["issued_at"]))
+            self.expires = currentDate.add(Math.round(timespan))
+            self.token = token["id"]
+          cb(self.token)
+      )
+    cb(@token)
 
 module.exports.Client = Client
