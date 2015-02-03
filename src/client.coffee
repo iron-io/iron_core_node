@@ -114,7 +114,7 @@ class Client
     request(requestInfo, (error, response, body) ->
       if error && not response
          cb(error, response, body)
-      else if response.statusCode == 200
+      else if response.statusCode >= 200 and response.statusCode < 300
         cb(error, response, body)
       else
         if (response.statusCode == 503 or response.statusCode == 408) and retry < @MAX_RETRIES
