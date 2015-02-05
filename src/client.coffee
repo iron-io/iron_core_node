@@ -163,7 +163,7 @@ class Client
   parseResponse: (error, response, body, cb, parseJson = true) ->
     if error
       cb(error, null)
-    else if response.statusCode == 200
+    else if response.statusCode >= 200 and response.statusCode < 300
       body = JSON.parse(body) if parseJson and typeof(body) == 'string'
 
       cb(null, body)
