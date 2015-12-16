@@ -117,7 +117,7 @@ class Client
       else if response.statusCode >= 200 and response.statusCode < 300
         cb(error, response, body)
       else
-        if (response.statusCode == 503 or response.statusCode == 408) and retry < @MAX_RETRIES
+        if (response.statusCode == 503 or response.statusCode == 408) and retry < MAX_RETRIES
           delay = Math.pow(4, retry) * 100 * Math.random()
           _.delay(requestBind, delay, requestInfo, cb, retry + 1)
         else
