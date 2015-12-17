@@ -1,6 +1,6 @@
 {
   "name": "iron_core",
-  "version": "0.2.5",
+  "version": "0.2.6",
   "description": "Core library for Iron products",
   "homepage": "https://github.com/iron-io/iron_core_node",
   "author": "Andrew Kirilenko & Iron.io, Inc",
