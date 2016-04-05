@@ -151,6 +151,15 @@ class Client
 
     @request(requestInfo, cb)
 
+  patch: (method, params, cb) ->
+    requestInfo =
+      method: 'PATCH'
+      uri: @url() + method
+      headers: @headers()
+      json: params
+
+    @request(requestInfo, cb)
+
   delete: (method, params, cb) ->
     requestInfo =
       method: 'DELETE'
