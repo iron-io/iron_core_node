@@ -1,6 +1,6 @@
 {
   "name": "iron_core",
-  "version": "0.2.7",
+  "version": "0.2.8",
   "description": "Core library for Iron products",
   "homepage": "https://github.com/iron-io/iron_core_node",
   "author": "Andrew Kirilenko & Iron.io, Inc",
@@ -8,7 +8,7 @@
   "dependencies": {
     "pkginfo": "0.3.0",
     "underscore": "1.7.0",
-    "request": "2.53.0"
+    "request": "2.81.0"
   },
   "devDependencies": {
     "coffee-script": "1.6.2"
